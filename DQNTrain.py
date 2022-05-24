@@ -50,29 +50,29 @@ def fmtObservation(obs):
 	obs = torch.permute(obs, (2, 0, 1))
 	return obs
 
-def chooseAction(state, QNet):
-	predictedRewards = QNet(torch.unsqueeze(state, 0))
-	predictedRewardsNumpy = predictedRewards.detach().numpy() 
-	bestAction = np.argmax(predictedRewardsNumpy)
-	chooseAction.predictedRewards = predictedRewards
-	chooseAction.predictedRewardsNumpy = predictedRewardsNumpy
+def chooseAction(state, QNet, randomChance):
+	randomNum = random.random()
+	bestAction = -1
+	if randomNum < randomChance:
+		bestAction = random.randrange(0, 4)
+	else:
+		predictedRewards = QNet(torch.unsqueeze(state, 0))
+		predictedRewardsNumpy = predictedRewards.detach().numpy() 
+		bestAction = np.argmax(predictedRewardsNumpy)
 	return bestAction
 
 env = gym.make('ALE/Breakout-v5', render_mode="human", full_action_space=False)
 
-def collectTransitions():
-	print("Collecting 1 game of transitions!")
+def collectTransitions(randomChance):
 	observation = env.reset()
 	done = False
 	step = 0
 	while not done:
-		print("STEP {}".format(step))
 		step += 1
 		currentState = observation
 		currentState = fmtObservation(currentState)
 
-		action = chooseAction(currentState, QNetwork)
-		print("ACTION {}".format(action))
+		action = chooseAction(currentState, QNetwork, randomChance)
 
 		observation, reward, done, info = env.step(action)
 
@@ -114,22 +114,23 @@ def trainStep(lossFunction, optimizer, batchSize):
 	optimizer.step()
 	return loss
 
-
 def evaluateAgent(numGames, QNet, renderGames=False):
+	print("Evaluating agent, Render {}".format(renderGames))
 	avgReward = 0.
 	for i in range(numGames):
+		print("Evaluation game {}".format(i))
 		totalReward = 0.
 		observation = env.reset()
 		done = False
-		while not done:
+		maxStep = 2000
+		step = 0
+		while not done and step <= maxStep:
+			step += 1
 			currentState = observation
 			currentState = fmtObservation(currentState)
-			action = chooseAction(currentState, QNet)
-			observation, _, done, info = env.step(action)
-			reward = np.exp(observation[0]*10, dtype=np.float32)
+			action = chooseAction(currentState, QNet, 0.)
+			observation, reward, done, info = env.step(action)
 			totalReward += reward
-			if renderGames:
-				env.render()
 		avgReward += totalReward
 	avgReward /= numGames
 	return avgReward
@@ -147,19 +148,24 @@ optimizer = torch.optim.RMSprop(QNetwork.parameters())
 bestSoFar = DQN()
 bestReward = 0
 
+randomChance = 1.
+
 if __name__ == "__main__":
 	i = 0
 	while True:
-		collectTransitions()
+		print("Collecting transitions")
+		collectTransitions(randomChance)
+		randomChance *= 0.99
 		for _ in range(STEPS_PER_TRAINSTEP):
+			print("Running train step")
 			trainStep(lossFunc, optimizer, BATCH_SIZE)
 		if i%EVALUATE_EVERY == 0:
-			avgReward = evaluateAgent(3, QNetwork, False)
+			avgReward = evaluateAgent(1, QNetwork, False)
 			if avgReward > bestReward:
 				bestReward = avgReward
 				bestSoFar.load_state_dict(QNetwork.state_dict())
 			print("Train Step {}: Average reward is {}".format(i, avgReward))
 			print("Best Reward so far: {}".format(bestReward))
 		if i%RENDER_EVERY == 0:
-			evaluateAgent(3, bestSoFar, True)
+			evaluateAgent(1, bestSoFar, True)
 		i += 1
