@@ -153,9 +153,9 @@ randomChance = 1.
 if __name__ == "__main__":
 	i = 0
 	while True:
-		print("Collecting transitions")
+		print("Collecting transitions, randomChance is {}".format(randomChance))
 		collectTransitions(randomChance)
-		randomChance *= 0.99
+		randomChance *= 0.999
 		for _ in range(STEPS_PER_TRAINSTEP):
 			print("Running train step")
 			trainStep(lossFunc, optimizer, BATCH_SIZE)
