@@ -51,7 +51,7 @@ QNetwork.to(device)
 def fmtObservation(obs):
 	obs = torch.from_numpy(obs/255).type(torch.float32)
 	obs = torch.permute(obs, (2, 0, 1))
-	obs.to(device)
+	obs = obs.to(device)
 	return obs
 
 def chooseAction(state, QNet, randomChance):
@@ -95,7 +95,6 @@ def trainStep(lossFunction, optimizer, batchSize):
 	nextStates = torch.stack(nextStates)
 	actions = torch.unsqueeze(torch.Tensor(actions), 1).to(torch.int64)
 	
-	states.to(device)
 	predictedRewards = QNetwork(states)
 
 	with torch.no_grad():
