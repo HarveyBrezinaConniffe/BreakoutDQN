@@ -95,8 +95,8 @@ def trainStep(lossFunction, optimizer, batchSize):
 	nextStates = torch.stack(nextStates)
 	actions = torch.unsqueeze(torch.Tensor(actions), 1).to(torch.int64)
 	
+	states.to(device)
 	predictedRewards = QNetwork(states)
-
 
 	with torch.no_grad():
 		futurePredictions = QNetwork(nextStates)
