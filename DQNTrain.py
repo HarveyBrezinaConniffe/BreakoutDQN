@@ -51,6 +51,7 @@ QNetwork.to(device)
 def fmtObservation(obs):
 	obs = torch.from_numpy(obs/255).type(torch.float32)
 	obs = torch.permute(obs, (2, 0, 1))
+	obs.to(device)
 	return obs
 
 def chooseAction(state, QNet, randomChance):
