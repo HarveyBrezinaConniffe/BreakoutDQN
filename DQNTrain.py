@@ -6,6 +6,8 @@ from collections import deque, namedtuple
 import numpy as np
 import random
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 Transition = namedtuple("Transition", ["state", "action", "reward", "nextState"])
 
 MEMORY_SIZE = 10000
@@ -44,6 +46,7 @@ class DQN(nn.Module):
 		return self.linearNet(linearFeatures)
 
 QNetwork = DQN()
+QNetwork.to(device)
 
 def fmtObservation(obs):
 	obs = torch.from_numpy(obs/255).type(torch.float32)
@@ -61,7 +64,7 @@ def chooseAction(state, QNet, randomChance):
 		bestAction = np.argmax(predictedRewardsNumpy)
 	return bestAction
 
-env = gym.make('ALE/Breakout-v5', render_mode="human", full_action_space=False)
+env = gym.make('ALE/Breakout-v5', full_action_space=False)
 
 def collectTransitions(randomChance):
 	observation = env.reset()
